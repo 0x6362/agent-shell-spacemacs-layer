@@ -1,0 +1,243 @@
+#+TITLE: agent-shell layer
+#+DESCRIPTION: Spacemacs layer for agent-shell — AI coding assistant shell integration
+#+TAGS: layer|tools
+
+* Table of Contents                                        :TOC_4_gh:noexport:
+- [[#description][Description]]
+  - [[#features][Features]]
+  - [[#evil-state-assignments][Evil state assignments]]
+- [[#install][Install]]
+  - [[#requirements][Requirements]]
+  - [[#setup][Setup]]
+  - [[#authentication][Authentication]]
+- [[#layer-variables][Layer variables]]
+- [[#key-bindings][Key bindings]]
+  - [[#global-prefix][Global prefix]]
+  - [[#agent-shell-mode][agent-shell-mode]]
+  - [[#agent-shell-viewport-view-mode][agent-shell-viewport-view-mode]]
+  - [[#agent-shell-viewport-edit-mode][agent-shell-viewport-edit-mode]]
+- [[#commands][Commands]]
+  - [[#agent-shellset-project][agent-shell/set-project]]
+
+* Description
+
+This layer integrates [[https://github.com/xenodium/agent-shell][agent-shell]] with Spacemacs.
+
+** Features
+
+- Evil-mode integration for all agent-shell buffer types
+- Major-mode leader bindings (~,~ / ~SPC m~) for ~agent-shell-mode~, ~agent-shell-viewport-view-mode~, and ~agent-shell-viewport-edit-mode~
+- Per-mode transient states (~C-c .~) for navigation and session management
+- A global prefix map (default ~C-c s~) for send/jump/create operations from any buffer
+- ~agent-shell/set-project~ to re-point a running shell at a different project directory without restarting the session
+
+** Evil state assignments
+
+| Buffer type                         | Evil state | Rationale                                                      |
+|-------------------------------------+------------+----------------------------------------------------------------|
+| ~agent-shell-mode~                  | normal     | Full editing; ~RET~ sends in normal state, newlines in insert  |
+| ~agent-shell-viewport-view-mode~    | motion     | Read-only viewer; vim navigation, no insert                    |
+| ~agent-shell-viewport-edit-mode~    | insert     | Compose buffer; stays in insert for typing                     |
+| ~*agent-shell-diff*~                | emacs      | Diff buffers have their own complete key scheme                |
+
+* Install
+
+** Requirements
+
+- [[https://github.com/xenodium/acp.el][acp.el]]
+- [[https://github.com/xenodium/shell-maker][shell-maker]]
+- [[https://github.com/xenodium/agent-shell][agent-shell]]
+
+** Setup
+
+1. Copy or symlink this layer directory into your Spacemacs private layers path
+   (typically =~/.emacs.d/private/=).
+
+2. Ensure ~acp~ and ~shell-maker~ are declared (e.g. in ~dotspacemacs-additional-packages~):
+
+   #+begin_src emacs-lisp
+   dotspacemacs-additional-packages '(shell-maker
+                                      (acp :location (recipe
+                                                      :fetcher github
+                                                      :repo "xenodium/acp.el")))
+   #+end_src
+
+3. Add the layer to ~dotspacemacs-configuration-layers~:
+
+   #+begin_src emacs-lisp
+   (agent-shell :variables
+                agent-shell-layer-global-key "C-c s")
+   #+end_src
+
+   To use a local source checkout instead of the GitHub recipe (e.g. when working
+   on a fork):
+
+   #+begin_src emacs-lisp
+   (agent-shell :variables
+                agent-shell-layer-source-path "~/dev/agent-shell"
+                agent-shell-layer-global-key  "C-c s")
+   #+end_src
+
+** Authentication
+
+Authentication is personal and environment-specific. Supply it via
+~agent-shell-layer-configure-fn~, which is called at the end of the layer's
+~:config~ phase once all agent-shell functions are loaded:
+
+#+begin_src emacs-lisp
+(agent-shell :variables
+             agent-shell-layer-global-key "C-c s"
+             agent-shell-layer-configure-fn
+             (lambda ()
+               (setq agent-shell-anthropic-authentication
+                     (agent-shell-anthropic-make-authentication :login t)
+                     agent-shell-preferred-agent-config
+                     (agent-shell-anthropic-make-claude-code-config)
+                     agent-shell-session-strategy 'prompt)))
+#+end_src
+
+* Layer variables
+
+| Variable                          | Default      | Description                                                         |
+|-----------------------------------+--------------+---------------------------------------------------------------------|
+| ~agent-shell-layer-source-path~   | ~nil~        | Path to a local agent-shell checkout; takes precedence if non-nil  |
+| ~agent-shell-layer-global-key~    | ~"C-c s"~    | Global prefix key for the agent-shell command map                   |
+| ~agent-shell-layer-configure-fn~  | ~nil~        | Called at end of config phase; set authentication and personal vars |
+
+* Key bindings
+
+** Global prefix
+
+Available from any buffer. Press ~C-c s~ (or your configured key) then one of:
+
+| Key | Command                           | Description                         |
+|-----+-----------------------------------+-------------------------------------|
+| ~r~ | ~agent-shell-send-region~         | Send region to shell                |
+| ~R~ | ~agent-shell-send-region-to~      | Send region, choose shell           |
+| ~f~ | ~agent-shell-send-file~           | Send current file                   |
+| ~F~ | ~agent-shell-send-file-to~        | Send file, choose shell             |
+| ~o~ | ~agent-shell-send-other-file~     | Send other window's file            |
+| ~s~ | ~agent-shell-send-screenshot~     | Send screenshot                     |
+| ~S~ | ~agent-shell-send-screenshot-to~  | Send screenshot, choose shell       |
+| ~i~ | ~agent-shell-send-clipboard-image~    | Send clipboard image            |
+| ~I~ | ~agent-shell-send-clipboard-image-to~ | Send clipboard image, choose shell |
+| ~j~ | ~agent-shell//switch-to-buffer~   | Jump to a shell buffer              |
+| ~t~ | ~agent-shell-toggle~              | Toggle shell visibility             |
+| ~d~ | ~agent-shell/set-project~         | Set shell project directory         |
+| ~n~ | ~agent-shell-new-shell~           | New shell in current directory      |
+| ~N~ | ~agent-shell-new-temp-shell~      | New shell in a temporary directory  |
+| ~c~ | ~agent-shell-prompt-compose~      | Open compose buffer                 |
+
+** ~agent-shell-mode~
+
+Leader bindings under ~,~ / ~SPC m~. Enter the transient state with ~,~ ~.~ or ~C-c .~.
+
+| Key   | Command                              | Description               |
+|-------+--------------------------------------+---------------------------|
+| ~.~   | transient state                      | Enter navigation transient |
+| ~c~   | ~agent-shell-cycle-session-mode~     | Cycle session mode        |
+| ~C~   | ~agent-shell-set-session-config-option~ | Set config option      |
+| ~d~   | ~agent-shell/set-project~            | Set project directory     |
+| ~i~   | ~agent-shell-interrupt~              | Interrupt                 |
+| ~n~   | ~agent-shell-next-item~              | Next item                 |
+| ~o~   | ~agent-shell-other-buffer~           | Other buffer              |
+| ~p~   | ~agent-shell-previous-item~          | Previous item             |
+| ~r~   | ~agent-shell-quote-region~           | Quote region              |
+| ~s~   | ~agent-shell-set-session-mode~       | Set session mode          |
+| ~t~   | ~agent-shell-set-session-thought-level~ | Set thought level      |
+| ~v~   | ~agent-shell-set-session-model~      | Set model                 |
+
+Transient (~C-c .~): navigation keys stay open; session commands exit.
+
+| Key | Command                              | Exits |
+|-----+--------------------------------------+-------|
+| ~n~ | ~agent-shell-next-item~              | no    |
+| ~p~ | ~agent-shell-previous-item~          | no    |
+| ~r~ | ~agent-shell-quote-region~           | no    |
+| ~d~ | ~agent-shell/set-project~            | yes   |
+| ~v~ | ~agent-shell-set-session-model~      | yes   |
+| ~s~ | ~agent-shell-set-session-mode~       | yes   |
+| ~t~ | ~agent-shell-set-session-thought-level~ | yes |
+| ~c~ | ~agent-shell-cycle-session-mode~     | yes   |
+| ~C~ | ~agent-shell-set-session-config-option~ | yes |
+| ~i~ | ~agent-shell-interrupt~              | yes   |
+| ~o~ | ~agent-shell-other-buffer~           | yes   |
+| ~q~ | quit                                 | yes   |
+
+** ~agent-shell-viewport-view-mode~
+
+Starts in evil ~motion~ state. Leader under ~,~ / ~SPC m~. Transient via ~,~ ~.~ or ~C-c .~.
+
+| Key   | Command                                  | Description        |
+|-------+------------------------------------------+--------------------|
+| ~.~   | transient state                          | Enter transient    |
+| ~a~   | ~agent-shell-viewport-reply-again~       | Reply: again       |
+| ~b~   | ~agent-shell-viewport-previous-page~     | Previous page      |
+| ~c~   | ~agent-shell-viewport-reply-continue~    | Reply: continue    |
+| ~d~   | ~agent-shell/set-project~                | Set project dir    |
+| ~f~   | ~agent-shell-viewport-next-page~         | Next page          |
+| ~i~   | ~agent-shell-viewport-interrupt~         | Interrupt          |
+| ~m~   | ~agent-shell-viewport-reply-more~        | Reply: more        |
+| ~n~   | ~agent-shell-viewport-next-item~         | Next item          |
+| ~o~   | ~agent-shell-other-buffer~               | Other buffer       |
+| ~p~   | ~agent-shell-viewport-previous-item~     | Previous item      |
+| ~q~   | ~bury-buffer~                            | Bury buffer        |
+| ~r~   | ~agent-shell-viewport-reply~             | Reply              |
+| ~R~   | ~agent-shell-viewport-quote-reply~       | Quote-reply        |
+| ~s~   | ~agent-shell-viewport-set-session-mode~  | Set session mode   |
+| ~t~   | ~agent-shell-viewport-set-session-thought-level~ | Set thought level |
+| ~v~   | ~agent-shell-viewport-set-session-model~ | Set model         |
+| ~y~   | ~agent-shell-viewport-reply-yes~         | Reply: yes         |
+
+Transient (~C-c .~):
+
+| Key     | Command                                    | Exits |
+|---------+--------------------------------------------+-------|
+| ~n~     | ~agent-shell-viewport-next-item~           | no    |
+| ~p~     | ~agent-shell-viewport-previous-item~       | no    |
+| ~f~     | ~agent-shell-viewport-next-page~           | no    |
+| ~b~     | ~agent-shell-viewport-previous-page~       | no    |
+| ~r~     | ~agent-shell-viewport-reply~               | no    |
+| ~R~     | ~agent-shell-viewport-quote-reply~         | no    |
+| ~y~     | ~agent-shell-viewport-reply-yes~           | no    |
+| ~m~     | ~agent-shell-viewport-reply-more~          | no    |
+| ~a~     | ~agent-shell-viewport-reply-again~         | no    |
+| ~c~     | ~agent-shell-viewport-reply-continue~      | no    |
+| ~1~-~9~ | ~agent-shell-viewport-reply-{1-9}~         | no    |
+| ~d~     | ~agent-shell/set-project~                  | yes   |
+| ~v~     | ~agent-shell-viewport-set-session-model~   | yes   |
+| ~s~     | ~agent-shell-viewport-set-session-mode~    | yes   |
+| ~t~     | ~agent-shell-viewport-set-session-thought-level~ | yes |
+| ~i~     | ~agent-shell-viewport-interrupt~           | yes   |
+| ~o~     | ~agent-shell-other-buffer~                 | yes   |
+| ~q~     | quit                                       | yes   |
+
+** ~agent-shell-viewport-edit-mode~
+
+Compose buffer. Leader bindings only — no transient.
+
+| Key     | Command                                    | Description       |
+|---------+--------------------------------------------+-------------------|
+| ~RET~   | ~agent-shell-viewport-compose-send~        | Send              |
+| ~h~     | ~agent-shell-viewport-compose-help-menu~   | Help menu         |
+| ~k~     | ~agent-shell-viewport-compose-cancel~      | Cancel            |
+| ~o~     | ~agent-shell-other-buffer~                 | Other buffer      |
+| ~p~     | ~agent-shell-viewport-compose-peek-last~   | Peek last response |
+| ~s~     | ~agent-shell-viewport-set-session-mode~    | Set session mode  |
+| ~t~     | ~agent-shell-viewport-set-session-thought-level~ | Set thought level |
+| ~v~     | ~agent-shell-viewport-set-session-model~   | Set model         |
+
+* Commands
+
+** ~agent-shell/set-project~
+
+Re-points a running agent-shell buffer at a different project directory without
+restarting the session.
+
+- Called from an agent-shell or viewport buffer: targets that buffer's shell
+- Called from any other buffer: prompts to select a shell buffer via completing-read
+
+Prompts for a directory, defaulting to the current project root. Overrides
+~agent-shell-cwd-function~ buffer-locally, bypassing projectile and project.el for
+that shell only. The override persists until the buffer is killed or the command
+is called again.
