@@ -1,4 +1,4 @@
-;;; config.el --- agent-shell layer configuration for Spacemacs.
+;;; config.el --- agent-shell layer configuration for Spacemacs.  -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (c) 2026 Cate B.
 ;;

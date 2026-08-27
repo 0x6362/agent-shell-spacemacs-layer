@@ -1,4 +1,4 @@
-;;; funcs.el --- agent-shell layer functions for Spacemacs.
+;;; funcs.el --- agent-shell layer functions for Spacemacs.  -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (c) 2026 Cate B.
 ;;
