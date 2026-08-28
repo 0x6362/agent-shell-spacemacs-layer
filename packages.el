@@ -99,18 +99,20 @@ Each entry is either:
     (spacemacs|define-transient-state agent-shell-shell
       :title "Agent Shell"
       :doc "
-  Navigate  [_n_] next item    [_p_] prev item
+  Navigate  [_n_] next item    [_p_] prev item    [_V_] viewport mode
   Act       [_r_] quote-region  [_d_] set project dir
   Session   [_v_] model  [_s_] mode  [_t_] thought  [_c_] cycle  [_C_] config
-  Other     [_i_] interrupt  [_o_] other buf  [_q_] quit"
+  Other     [_i_] interrupt  [_o_] other buf  [_q_] quit [_R_] restart session"
       :bindings
       ("n" agent-shell-next-item)
       ("p" agent-shell-previous-item)
       ("r" agent-shell-quote-region)
+      ("R" agent-shell-restart :exit t)
       ("d" agent-shell/set-project :exit t)
       ("v" agent-shell-set-session-model :exit t)
-      ("s" agent-shell-set-session-mode :exit t)
+      ("V" agent-shell-viewport :exit t)
       ("t" agent-shell-set-session-thought-level :exit t)
+      ("s" agent-shell-set-session-mode :exit t)
       ("c" agent-shell-cycle-session-mode :exit t)
       ("C" agent-shell-set-session-config-option :exit t)
       ("i" agent-shell-interrupt :exit t)
@@ -161,6 +163,7 @@ Each entry is either:
         ;; Send
         (define-key map (kbd "r") #'agent-shell-send-region)
         (define-key map (kbd "R") #'agent-shell-send-region-to)
+        (define-key map (kbd "k") #'agent-shell-restart)
         (define-key map (kbd "f") #'agent-shell-send-file)
         (define-key map (kbd "F") #'agent-shell-send-file-to)
         (define-key map (kbd "o") #'agent-shell-send-other-file)
@@ -184,11 +187,11 @@ Each entry is either:
 
     ;; C-c . → per-mode transient (reachable in all evil states via C-c prefix)
     (define-key agent-shell-mode-map (kbd "C-c .")
-      #'spacemacs/agent-shell-shell-transient-state/body)
+                #'spacemacs/agent-shell-shell-transient-state/body)
     (define-key agent-shell-viewport-view-mode-map (kbd "C-c .")
-      #'spacemacs/agent-shell-viewport-transient-state/body)
+                #'spacemacs/agent-shell-viewport-transient-state/body)
     (define-key agent-shell-viewport-edit-mode-map (kbd "C-c .")
-      #'spacemacs/agent-shell-viewport-transient-state/body)
+                #'spacemacs/agent-shell-viewport-transient-state/body)
 
     ;; Leader bindings: agent-shell-mode
     (spacemacs/set-leader-keys-for-major-mode 'agent-shell-mode
