@@ -30,9 +30,7 @@
 ;;; Code:
 
 (defconst agent-shell-packages
-  '((agent-shell :location (recipe :fetcher github
-                                   :repo "xenodium/agent-shell"
-                                   :files ("*.el"))))
+  '((agent-shell :location elpa))
   "The list of Lisp packages required by the agent-shell layer.
 
 Each entry is either:
